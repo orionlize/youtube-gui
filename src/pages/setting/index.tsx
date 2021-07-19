@@ -5,7 +5,7 @@ import styles from './index.module.sass'
 
 const LOCAL_PROXY = require('@/const/index')
 
-@layout()
+@layout
 export default class Setting extends Component<{visible: boolean}, {}> {
   constructor(props: any) {
     super(props)

@@ -7,7 +7,7 @@ import useSelect, { items } from '@/store'
 import Browser from './pages/browser'
 import Setting from './pages/setting'
 
-import styles from './App.module.sass'
+import styles from './app.module.sass'
 
 function App() {
   const { select } = useSelect()

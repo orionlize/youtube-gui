@@ -3,18 +3,17 @@ const path = require('path')
 const { LOCAL_PROXY_EVENT } = require('./src/const/index')
 
 
-app.commandLine.appendSwitch('proxy-server', 'http://127.0.0.1:4780')
+app.commandLine.appendSwitch('proxy-server', 'socks://127.0.0.1:1080')
 
 let mainWindow
 function createWindow () {
   mainWindow = new BrowserWindow({
     width: 1280, 
     height: 720,
+    resizable: false,
     webPreferences: {
       webviewTag: true,
-      nodeIntegration: true,
-      webSecurity: false,
-      preload: path.resolve(__dirname, '..', 'public/renderer.js')
+      nodeIntegration: true
     }})
 
   mainWindow.loadURL('http://localhost:3000/')
@@ -39,6 +38,5 @@ app.on('activate', function () {
   }
 })
 
-global.electron.ipcRenderer.on(LOCAL_PROXY_EVENT, (e) => {
-  console.log(e)
-})
+// let command = 'youtube-dl --proxy socks5://127.0.0.1:1080 -f 137 https://www.youtube.com/watch\?v=ekP7VLeXnqY'
+// let cmdStr = './'
