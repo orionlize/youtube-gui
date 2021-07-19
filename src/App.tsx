@@ -1,24 +1,22 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+
+import Menu from '@/components/menu'
+
+import useSelect, { items } from '@/store'
+
+import Browser from './pages/browser'
+import Setting from './pages/setting'
+
+import styles from './App.module.sass'
 
 function App() {
+  const { select } = useSelect()
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className={styles['app']}>
+      <Menu />
+      <Browser visible={select === Object.keys(items)[0]} />
+      <Setting visible={select === Object.keys(items)[2]} />
     </div>
   );
 }
