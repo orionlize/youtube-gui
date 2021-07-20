@@ -17,6 +17,7 @@ export default class Setting extends Component<{visible: boolean}, {
     this.updateSetting = this.updateSetting.bind(this)
     this.onSelectChange = this.onSelectChange.bind(this)
     this.onChange = this.onChange.bind(this)
+    this.onSave = this.onSave.bind(this)
   }
 
   state = {
@@ -53,6 +54,10 @@ export default class Setting extends Component<{visible: boolean}, {
     this.setState({
       ip: e
     })
+  }
+
+  onSave () {
+    
   }
 
   renderItem(item: any[]) {
