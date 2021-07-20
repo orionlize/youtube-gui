@@ -58,11 +58,15 @@ const useTypeScript = fs.existsSync(paths.appTsConfig);
 // Get the path to the uncompiled service worker (if it exists).
 const swSrc = paths.swSrc;
 
+const { getThemeVariables } = require('antd/dist/theme');
+
 // style files regexes
 const cssRegex = /\.css$/;
 const cssModuleRegex = /\.module\.css$/;
 const sassRegex = /\.(scss|sass)$/;
 const sassModuleRegex = /\.module\.(scss|sass)$/;
+const lessRegex = /\.less$/;
+
 
 const hasJsxRuntime = (() => {
   if (process.env.DISABLE_NEW_JSX_TRANSFORM === 'true') {
@@ -534,6 +538,25 @@ module.exports = function (webpackEnv) {
                 },
                 'sass-loader'
               ),
+            },
+            {
+              test: lessRegex,
+              use: [{
+                  loader: 'style-loader'
+              }, {
+                  loader: 'css-loader'
+              }, {
+                  loader: 'less-loader',
+                  options: {
+                    lessOptions: {
+                      javascriptEnabled: true,
+                      modifyVars: getThemeVariables({
+                        dark: true, // 开启暗黑模式
+                        compact: true, // 开启紧凑模式
+                      })
+                    }
+                  }
+              }]
             },
             // "file" loader makes sure those assets get served by WebpackDevServer.
             // When you `import` an asset, you get its (virtual) filename.

@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import useModel, { items } from '@/store'
 import layout from '@/components/layout'
 import styles from './index.module.sass'
-import { remote } from 'electron';
 
 @layout
 export default class Browser extends Component<{visible: boolean}, {url: string}> {

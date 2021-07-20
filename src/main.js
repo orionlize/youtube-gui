@@ -1,9 +1,9 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
-const { LOCAL_PROXY_EVENT } = require('./src/const/index')
+const { LOCAL_READ } = require('./const/index')
+const { handleReadMessage } = require('./utils/index')
 
-
-app.commandLine.appendSwitch('proxy-server', 'socks://127.0.0.1:1080')
+app.commandLine.appendSwitch('proxy-server', 'socks://127.0.0.1:4781')
 
 let mainWindow
 function createWindow () {
@@ -14,14 +14,17 @@ function createWindow () {
     webPreferences: {
       webviewTag: true,
       nodeIntegration: true,
-      preload: path.resolve(__dirname, 'public/preload.js')
+      contextIsolation: false
     }})
+
+  ipcMain.on(LOCAL_READ, handleReadMessage)
 
   mainWindow.loadURL('http://localhost:3000/')
   mainWindow.webContents.openDevTools()
 
   mainWindow.on('closed', function() {
     mainWindow = null
+    ipcMain.off(LOCAL_READ, handleReadMessage)
   })
 }
 
@@ -38,6 +41,7 @@ app.on('activate', function () {
     createWindow()
   }
 })
+
 
 // let command = 'youtube-dl --proxy socks5://127.0.0.1:1080 -f 137 https://www.youtube.com/watch\?v=ekP7VLeXnqY'
 // let cmdStr = './'

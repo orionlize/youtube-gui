@@ -1,4 +1,7 @@
-const exec = require('child_process').exec
+const { exec } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const { LOCAL_READ } = require('../const/index')
 
 module.exports = {
 	exec: function (command, commandPath) {
@@ -16,5 +19,14 @@ module.exports = {
 			})
 		}
 		runCommand(command, commandPath)
-	}
+	},
+	handleReadMessage: function (e, _) {
+		fs.readFile(path.resolve(__dirname, '..', 'config.json'), 'utf-8', function(err, data) {
+			if (!err) {
+				e.sender.send(LOCAL_READ, data)
+			} else {
+				// 处理异常
+			}
+		})
+  }
 }
