@@ -13,7 +13,8 @@ function createWindow () {
     resizable: false,
     webPreferences: {
       webviewTag: true,
-      nodeIntegration: true
+      nodeIntegration: true,
+      preload: path.resolve(__dirname, 'public/preload.js')
     }})
 
   mainWindow.loadURL('http://localhost:3000/')

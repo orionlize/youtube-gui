@@ -1,5 +1,4 @@
 import { Component } from 'react'
-import { ipcRenderer } from 'electron'
 import layout from '@/components/layout'
 import styles from './index.module.sass'
 
@@ -10,7 +9,6 @@ export default class Setting extends Component<{visible: boolean}, {}> {
   constructor(props: any) {
     super(props)
     // ipcRenderer.send(LOCAL_PROXY, '123')
-    console.log(window)
   }
 
   render() {
