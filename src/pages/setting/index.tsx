@@ -1,7 +1,8 @@
 import { Component } from 'react'
-import { Button, Input, List, Select } from 'antd'
+import { Button, Input, List, Select, message } from 'antd'
 import layout from '@/components/layout'
 import styles from './index.module.sass'
+import { LOCAL_WRITE } from '@/const'
 
 const electron = window.require('electron')
 const { LOCAL_READ } = require('../../const/index')
@@ -15,8 +16,10 @@ export default class Setting extends Component<{visible: boolean}, {
   constructor(props: any) {
     super(props)
     this.updateSetting = this.updateSetting.bind(this)
+    this.showReloadToast = this.showReloadToast.bind(this)
     this.onSelectChange = this.onSelectChange.bind(this)
     this.onChange = this.onChange.bind(this)
+    this.onSave = this.onSave.bind(this)
   }
 
   state = {
@@ -27,20 +30,27 @@ export default class Setting extends Component<{visible: boolean}, {
 
   componentDidMount () {
     electron.ipcRenderer.once(LOCAL_READ, this.updateSetting)
+    electron.ipcRenderer.on(LOCAL_WRITE, this.showReloadToast)
     electron.ipcRenderer.send(LOCAL_READ)
+  }
+  componentWillUnmount() {
+    electron.ipcRenderer.on(LOCAL_WRITE, this.showReloadToast)
   }
 
   updateSetting (e: any, msg: any) {
-    const json = JSON.parse(msg)
-    const keys = Object.keys(json)
+    const keys = Object.keys(msg)
     const dataSource: any[][] = []
     for(const key of keys) {
-      dataSource.push([key, json[key]])
-      this.setState(json[key])
+      dataSource.push([key, msg[key]])
+      this.setState(msg[key])
     }
     this.setState({
       dataSource: dataSource
     })
+  }
+
+  showReloadToast () {
+    message.info('重启应用后生效')
   }
 
   onSelectChange (e: string) {
@@ -51,20 +61,30 @@ export default class Setting extends Component<{visible: boolean}, {
     
   onChange (e: any) {
     this.setState({
-      ip: e
+      ip: e.target.value
     })
+  }
+
+  onSave () {
+    const { type, ip } = this.state
+    const config: {[key: string]: any} = {}
+    config.proxy = {
+      type,
+      ip
+    }
+    electron.ipcRenderer.send(LOCAL_WRITE, config)
   }
 
   renderItem(item: any[]) {
     switch (item[0]) {
       case 'proxy':
         const { type, ip } = this.state
-        const selectBefore = <Select value={type} className="select-before" onChange={this.onSelectChange}>
+        const selectBefore = <Select size='large' value={type} className="select-before" onChange={this.onSelectChange}>
             <Select.Option value="socks://">socks://</Select.Option >
             <Select.Option value="http://">http://</Select.Option >
             <Select.Option value="https://">https://</Select.Option >
           </Select>
-        return <Input value={ip} addonBefore={selectBefore} onChange={this.onChange} />
+        return <Input size='large' value={ip} addonBefore={selectBefore} onChange={this.onChange} />
       default:
         return null
     }
@@ -76,7 +96,7 @@ export default class Setting extends Component<{visible: boolean}, {
       <List 
         header={<div className={styles['setting-header']}>设置</div>} 
         footer={<div className={styles['setting-footer']}>
-          <Button>保存</Button>
+          <Button size='large' onClick={this.onSave}>保存</Button>
         </div>}
         dataSource={dataSource}
         renderItem={item => (

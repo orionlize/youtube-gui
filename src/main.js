@@ -1,9 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
-const { LOCAL_READ } = require('./const/index')
-const { handleReadMessage } = require('./utils/index')
+const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD } = require('./const/index')
+const { handleReadMessage, handleWriteMessage, readConfigureSync, handleDownload } = require('./utils/index')
 
-app.commandLine.appendSwitch('proxy-server', 'socks://127.0.0.1:4781')
+const config = readConfigureSync()
+
+app.commandLine.appendSwitch('proxy-server', `${config.proxy.type}${config.proxy.ip}`)
 
 let mainWindow
 function createWindow () {
@@ -14,10 +16,12 @@ function createWindow () {
     webPreferences: {
       webviewTag: true,
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
     }})
 
   ipcMain.on(LOCAL_READ, handleReadMessage)
+  ipcMain.on(LOCAL_WRITE, handleWriteMessage)
+  ipcMain.on(DOWNLOAD, handleDownload)
 
   mainWindow.loadURL('http://localhost:3000/')
   mainWindow.webContents.openDevTools()
@@ -25,6 +29,8 @@ function createWindow () {
   mainWindow.on('closed', function() {
     mainWindow = null
     ipcMain.off(LOCAL_READ, handleReadMessage)
+    ipcMain.off(LOCAL_WRITE, handleWriteMessage)
+    ipcMain.off(DOWNLOAD, handleDownload)
   })
 }
 

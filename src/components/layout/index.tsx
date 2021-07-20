@@ -6,7 +6,7 @@ export default function layou(WrappedComponent: any) {
     render() {
       const { visible } = this.props
       return (
-        <div className={styles['hoc']} style={{width: visible ? '90%' : '0', visibility: visible ? 'visible' : 'hidden'}}>
+        <div className={styles['hoc']} style={{width: visible ? 'calc(100% - 100px)' : '0', visibility: visible ? 'visible' : 'hidden'}}>
           <WrappedComponent />
         </div>
       )
