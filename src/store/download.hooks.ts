@@ -37,14 +37,15 @@ function useDownload () {
 
   const { maxDownloadTask } = useConfig()
 
+  console.log(downloadQueue)
+
   function _readyToDownload () {
     if (waitingQueue.length > 0 && downloadQueue.length < maxDownloadTask) {
       setWaitingQueue(draft => {
         setDownloadQueue(_draft => {
           const task = draft.pop()!
-          draft = draft.slice()
           task.status = DownloadStatus.Downloading
-          _draft = _draft.concat(task)
+          _draft.push(task)
           downloadMap.set(task.taskId, _draft.length - 1)
         })
       })
@@ -57,7 +58,7 @@ function useDownload () {
     if (downloadQueue.length < maxDownloadTask) {
       task.status = DownloadStatus.Downloading
       setDownloadQueue(draft => {
-        draft = draft.concat(task)
+        draft.push(task)
         downloadMap.set(task.taskId, draft.length - 1)
         electron.ipcRenderer.send(DOWNLOAD, {
           shell: getDownloadShell(taskId),
@@ -67,7 +68,7 @@ function useDownload () {
     } else {
       task.status = DownloadStatus.Ready
       setWaitingQueue(draft => {
-        draft = draft.concat(task)
+        draft.push(task)
       })
     }
   }
@@ -106,7 +107,7 @@ function useDownload () {
 
     task.status = DownloadStatus.Deleted
     setDeletedQueue(draft => {
-      draft = draft.concat(task)
+      draft.push(task)
     })
   }
 
@@ -115,7 +116,7 @@ function useDownload () {
     setDownloadQueue(draft => {
       draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
       setWaitingQueue(_draft => {
-        _draft = _draft.concat(task)
+        _draft.push(task)
       })
       _readyToDownload()
     })
@@ -135,21 +136,17 @@ function useDownload () {
     addDownloadTask(task.taskId)
   }
 
-  const updateTask = (data: string[], taskId: string) => {
+  const updateTask = (data: string[], taskId: string, update: Function) => {
     setDownloadQueue(draft => {
       const i = downloadMap.get(taskId)!
-      console.log(downloadQueue, i)
-      if (!Number.isNaN(taskId)) {
-        draft[i].percentage = data[0]
-        draft[i].fileSize = data[1]
-        draft[i].speed = data[2]
-        draft[i].waitingTime = data[3]
+      if (!Number.isNaN(i)) {
+        update(i)
       }
     })
   }
 
   return {
-    downloadQueue, waitingQueue, finishQueue, deletedQueue,
+    downloadQueue, waitingQueue, finishQueue, deletedQueue, setDownloadQueue,
     addDownloadTask, finishDownloadTask, pauseDownloadTask, removeDownloadTask, startDownloadTask, updateTask
   }
 }
