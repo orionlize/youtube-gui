@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import useSelect, { items } from '@/store'
+import useSelect, { items } from '@/store/menu'
 import styles from './index.module.sass'
 
 export default function Menu() {

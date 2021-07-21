@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import useModel, { items } from '@/store'
+import useModel, { items } from '@/store/menu'
+import useDownload from '@/store/download.hooks'
 import layout from '@/components/layout'
-import styles from './index.module.sass'
 import { DOWNLOAD } from '@/const';
 
-const electron = window.require('electron')
+import styles from './index.module.sass'
 
 @layout
 export default class Browser extends Component<{visible: boolean}, {url: string}> {
@@ -21,8 +21,7 @@ export default class Browser extends Component<{visible: boolean}, {url: string}
 
   clickDownload() {
     const { url } = this.state
-    console.log(`youtube-dl --proxy socks5://127.0.0.1:1080 -f 137 ${url.replace(/\?/g, "\\?")}`)
-    electron.ipcRenderer.send(DOWNLOAD, `youtube-dl --proxy http://127.0.0.1:12333 -f 137 ${url.replace(/\?/g, "\\?")}`)
+    useDownload.data?.addDownloadTask(url)
   }
 
   componentDidMount() {

@@ -7,7 +7,7 @@ export const items: {[key: string]: string} = {
   settings: '设置'
 }
 
-function useSelect() {
+function useSelect () {
   const [ select, setSelect ] = React.useState('browser')
   const updateSelect = (_: string) => setSelect(_)
   return {
@@ -15,6 +15,5 @@ function useSelect() {
     updateSelect
   }
 }
-
 
 export default createModel(useSelect)

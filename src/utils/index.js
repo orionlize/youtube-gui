@@ -2,15 +2,14 @@ const { app, BrowserWindow } = require('electron')
 const { exec } = require('child_process')
 const fs = require('fs')
 const path = require('path')
-const { LOCAL_READ, LOCAL_WRITE } = require('../const/index')
+const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD } = require('../const/index')
 
-function _exec (command, commandPath) {
+function _exec (command, commandPath, stdout) {
   let workerProcess 
   function runCommand(command, commandPath) {
     workerProcess = exec(command, commandPath)
     workerProcess.stdout.on('data', function (data) {
-      data = data.split(' ').filter(_ => _)
-      console.log(data[1], data[3], data[5], data[7])
+      stdout(data)
     })
     workerProcess.stderr.on('data', function (data) {
       console.log(data)
@@ -47,6 +46,11 @@ module.exports = {
 		})
   },
   handleDownload: function (e, msg) {
-    _exec(msg, '~')
+    
+    _exec(msg.shell, '~', function (data) {
+      data = data.split(' ').filter(_ => _)
+      const ret = [data[1], data[3], data[5], data[7]]
+      e.sender.send(DOWNLOAD, ret, msg.taskId)
+    })
   }
 }

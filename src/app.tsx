@@ -2,7 +2,7 @@ import React from 'react';
 
 import Menu from '@/components/menu'
 
-import useSelect, { items } from '@/store'
+import useSelect, { items } from '@/store/menu'
 
 import Browser from './pages/browser'
 import Setting from './pages/setting'
