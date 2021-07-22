@@ -1,6 +1,7 @@
 const { exec } = require('child_process')
 const fs = require('fs')
 const path = require('path')
+const { kill } = require('process')
 const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD } = require('../const/index')
 
 function _exec (command, commandPath, stdout, stderr) {
@@ -11,7 +12,7 @@ function _exec (command, commandPath, stdout, stderr) {
       stdout(data, workerProcess.pid)
     })
     workerProcess.stderr.on('data', function (data) {
-      stderr()
+      // stderr()
     })
   }
   runCommand(command, commandPath)
@@ -42,14 +43,12 @@ module.exports = {
 		})
   },
   handleDownload: function (e, msg) {
-    
     _exec(msg.shell, '~', function (data, pid) {
       e.sender.send(DOWNLOAD, data, msg.taskId, pid)
-    }, function () {
-
     })
   },
   handlePause: function (e, msg) {
-    _exec(`kill -9 ${msg}`)
+    kill(msg, 9)
+    kill(msg + 1, 9)
   }
 }

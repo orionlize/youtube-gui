@@ -1,5 +1,5 @@
 import { DOWNLOAD, PAUSE } from '@/const'
-import { getDownloadShell } from '@/utils/shell'
+import { getDownloadViedeoShell } from '@/utils/shell'
 import { createModel } from 'hox'
 import { useImmer } from 'use-immer'
 import useConfig from './config'
@@ -55,7 +55,6 @@ function useDownload () {
       const fileSizeRegex = data.match(/of +([\s\S]*?) +at/)
       const speedRegex = data.match(/at +([\s\S]*?) +/)
 
-      console.log(speedRegex)
       if (percentageRegex) {
         task.percentage = percentageRegex[1]
       }
@@ -81,15 +80,19 @@ function useDownload () {
   }
 
   function addDownloadTask (taskId: string) {
-    const task = new DownloadTask()
+    const task = downloadMap.get(taskId) || new DownloadTask()
     task.taskId = taskId
-    if (downloadQueue.length < maxDownloadTask) {
+
+    if (downloadQueue.filter(_ => _.status === DownloadStatus.Downloading).length < maxDownloadTask) {
       task.status = DownloadStatus.Downloading
       setDownloadQueue(draft => {
-        draft.push(task)
-        downloadMap.set(task.taskId, task)
+        if (task.pid === undefined) {
+          draft.push(task)
+          downloadMap.set(task.taskId, task)
+        }
+
         electron.ipcRenderer.send(DOWNLOAD, {
-          shell: getDownloadShell(taskId),
+          shell: getDownloadViedeoShell(taskId),
           taskId: taskId
         })
       })
@@ -145,10 +148,7 @@ function useDownload () {
   function pauseDownloadTask (task: DownloadTask) {
     task.status = DownloadStatus.Pause
     setDownloadQueue(draft => {
-      draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
-      setWaitingQueue(_draft => {
-        _draft.push(task)
-      })
+      task.status = DownloadStatus.Pause
       _readyToDownload()
 
       electron.ipcRenderer.send(PAUSE, task.pid)
@@ -165,8 +165,9 @@ function useDownload () {
         return draft
       })
     } else if (task.status === DownloadStatus.Pause) {
-      setWaitingQueue(draft => {
+      setDownloadQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
+        downloadMap.delete(task.taskId)
 
         return draft
       })
