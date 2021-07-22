@@ -1,0 +1,30 @@
+{
+  "id": "2692887",
+  "name": "youtube",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "YouTube gui YouTube-dl ffmpeg",
+  "glyphs": [
+    {
+      "icon_id": "20016130",
+      "name": "下载",
+      "font_class": "xiazai",
+      "unicode": "f204",
+      "unicode_decimal": 61956
+    },
+    {
+      "icon_id": "23064927",
+      "name": "暂停",
+      "font_class": "zanting",
+      "unicode": "f205",
+      "unicode_decimal": 61957
+    },
+    {
+      "icon_id": "19671112",
+      "name": "MP4",
+      "font_class": "MP4",
+      "unicode": "e7a8",
+      "unicode_decimal": 59304
+    }
+  ]
+}

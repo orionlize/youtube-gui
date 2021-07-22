@@ -1,11 +1,10 @@
-import { DOWNLOAD } from '@/const'
+import { DOWNLOAD, PAUSE } from '@/const'
 import { getDownloadShell } from '@/utils/shell'
 import { createModel } from 'hox'
-import React from 'react'
 import { useImmer } from 'use-immer'
 import useConfig from './config'
 
-enum DownloadStatus {
+export enum DownloadStatus {
   Ready,
   Pause,
   Downloading,
@@ -13,21 +12,21 @@ enum DownloadStatus {
   Deleted
 }
 
-class DownloadTask {
+export class DownloadTask {
   status: DownloadStatus = DownloadStatus.Ready
   pid?: number
-  fileName?: string
-  fileSize?: string
+  fileName: string = '获取中'
+  fileSize: string = '获取中'
   speed?: string
-  percentage?: string
-  waitingTime?: string
-  fileUrl?: string
+  percentage: string = '0.0%'
+  waitingTime: string = '00:00'
+  fileUrl: string = ''
   taskId: string = ''
 }
 
 const electron = window.require('electron')
 
-export const downloadMap = new Map<string, number>()
+export const downloadMap = new Map<string, DownloadTask>()
 
 function useDownload () {
   const [ downloadQueue, setDownloadQueue ] = useImmer<DownloadTask[]>([])
@@ -37,7 +36,36 @@ function useDownload () {
 
   const { maxDownloadTask } = useConfig()
 
-  console.log(downloadQueue)
+  // console.log(downloadQueue)
+
+  function _analyzeData (data: string, task: DownloadTask) {
+    const fileStart = data.indexOf('[download] Destination: ')
+    const downloadStart = data.indexOf('[download]')
+    const finish = data.search(/ in /)
+
+    if (fileStart !== -1) {
+      const fileEnd = data.search(/(\n|\r|(\r\n)|(\u0085)|(\u2028)|(\u2029))/)
+      task.fileName = data.substring(24, fileEnd)
+    } else if (downloadStart !== -1) {
+      if (finish !== -1) {
+        finishDownloadTask(task)
+      }
+
+      const percentageRegex = data.match(/\[download\] +([\s\S]*?) +of/)
+      const fileSizeRegex = data.match(/of +([\s\S]*?) +at/)
+      const speedRegex = data.match(/at +([\s\S]*?) +/)
+
+      console.log(speedRegex)
+      if (percentageRegex) {
+        task.percentage = percentageRegex[1]
+      }
+      if (fileSizeRegex) {
+        task.fileSize = fileSizeRegex[1]
+      }
+      task.speed = speedRegex ? speedRegex[1] : '0KiB/s'
+      task.waitingTime = data.split(' ').pop()!
+    }
+  }
 
   function _readyToDownload () {
     if (waitingQueue.length > 0 && downloadQueue.length < maxDownloadTask) {
@@ -46,7 +74,7 @@ function useDownload () {
           const task = draft.pop()!
           task.status = DownloadStatus.Downloading
           _draft.push(task)
-          downloadMap.set(task.taskId, _draft.length - 1)
+          downloadMap.set(task.taskId, task)
         })
       })
     }
@@ -59,7 +87,7 @@ function useDownload () {
       task.status = DownloadStatus.Downloading
       setDownloadQueue(draft => {
         draft.push(task)
-        downloadMap.set(task.taskId, draft.length - 1)
+        downloadMap.set(task.taskId, task)
         electron.ipcRenderer.send(DOWNLOAD, {
           shell: getDownloadShell(taskId),
           taskId: taskId
@@ -74,16 +102,19 @@ function useDownload () {
   }
 
   function finishDownloadTask (task: DownloadTask) {
-    task.status = DownloadStatus.Finished
-    setDownloadQueue(draft => {
-      draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
-      downloadMap.delete(task.taskId)
-      setFinishQueue(_draft => {
-        _draft.push(task)
-      })
+    if (task !== undefined) {
+      setDownloadQueue(draft => {
+        task.status = DownloadStatus.Finished
+        draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
+        downloadMap.delete(task.taskId)
+        setFinishQueue(_draft => {
+          _draft.push(task)
+        })
+        _readyToDownload()
 
-      _readyToDownload()
-    })
+        return draft
+      }) 
+    }
   }
 
   function removeDownloadTask (task: DownloadTask) {
@@ -119,6 +150,10 @@ function useDownload () {
         _draft.push(task)
       })
       _readyToDownload()
+
+      electron.ipcRenderer.send(PAUSE, task.pid)
+
+      return draft
     })
   }
 
@@ -126,23 +161,32 @@ function useDownload () {
     if (task.status === DownloadStatus.Deleted) {
       setDeletedQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
+
+        return draft
       })
     } else if (task.status === DownloadStatus.Pause) {
       setWaitingQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
+
+        return draft
       })
     }
 
     addDownloadTask(task.taskId)
   }
 
-  const updateTask = (data: string[], taskId: string, update: Function) => {
-    setDownloadQueue(draft => {
-      const i = downloadMap.get(taskId)!
-      if (!Number.isNaN(i)) {
-        update(i)
-      }
-    })
+  const updateTask = (_: any, data: string, taskId: string, pid: number) => {
+    const task = downloadMap.get(taskId)!
+    if (task !== undefined) {
+      setDownloadQueue(draft => {
+        if (task) {
+          task.pid = pid
+          _analyzeData(data, task)
+        }
+
+        return draft.slice()
+      })
+    }
   }
 
   return {

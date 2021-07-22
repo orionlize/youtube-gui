@@ -1,21 +1,17 @@
-const { app, BrowserWindow } = require('electron')
 const { exec } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD } = require('../const/index')
 
-function _exec (command, commandPath, stdout) {
+function _exec (command, commandPath, stdout, stderr) {
   let workerProcess 
   function runCommand(command, commandPath) {
     workerProcess = exec(command, commandPath)
     workerProcess.stdout.on('data', function (data) {
-      stdout(data)
+      stdout(data, workerProcess.pid)
     })
     workerProcess.stderr.on('data', function (data) {
-      console.log(data)
-    })
-    workerProcess.on('close', function (code) {
-      console.log('end:', code)
+      stderr()
     })
   }
   runCommand(command, commandPath)
@@ -47,10 +43,13 @@ module.exports = {
   },
   handleDownload: function (e, msg) {
     
-    _exec(msg.shell, '~', function (data) {
-      data = data.split(' ').filter(_ => _)
-      const ret = [data[1], data[3], data[5], data[7]]
-      e.sender.send(DOWNLOAD, ret, msg.taskId)
+    _exec(msg.shell, '~', function (data, pid) {
+      e.sender.send(DOWNLOAD, data, msg.taskId, pid)
+    }, function () {
+
     })
+  },
+  handlePause: function (e, msg) {
+    _exec(`kill -9 ${msg}`)
   }
 }

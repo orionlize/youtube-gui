@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import useModel, { items } from '@/store/menu'
 import useDownload from '@/store/download.hooks'
 import layout from '@/components/layout'
-import { DOWNLOAD } from '@/const';
 
 import styles from './index.module.sass'
 
@@ -26,7 +25,7 @@ export default class Browser extends Component<{visible: boolean}, {url: string}
 
   componentDidMount() {
     const that = this;
-    this.webviewRef.current?.addEventListener('did-start-loading', (e) => {
+    this.webviewRef.current?.addEventListener('did-stop-loading', (e) => {
       that.setState({
         url: this.webviewRef.current?.attributes.getNamedItem('src')?.value!
       })

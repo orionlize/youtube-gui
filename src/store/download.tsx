@@ -11,23 +11,10 @@ const downloadMount = new DocumentFragment()
 function Download () {
   const { updateTask } = useDownload()
   React.useEffect(() => {
-    const _updateTask = function (_: any, data: string[], taskId: string) {
-      updateTask(data, taskId, (i: number) => {
-        useDownload.data!.setDownloadQueue(draft => {
-          draft[i].percentage = data[0]
-          draft[i].fileSize = data[1]
-          draft[i].speed = data[2]
-          draft[i].waitingTime = data[3]
-
-          return draft.slice()
-        })
-      })
-    }
-
-    electron.ipcRenderer.on(DOWNLOAD, _updateTask)
+    electron.ipcRenderer.on(DOWNLOAD, updateTask)
     
     return () => {
-      electron.ipcRenderer.off(DOWNLOAD, _updateTask)
+      electron.ipcRenderer.off(DOWNLOAD, updateTask)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

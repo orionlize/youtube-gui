@@ -8,6 +8,7 @@ import Browser from './pages/browser'
 import Setting from './pages/setting'
 
 import styles from './app.module.sass'
+import DownLoad from './pages/download';
 
 function App() {
   const { select } = useSelect()
@@ -16,6 +17,7 @@ function App() {
     <div className={styles['app']}>
       <Menu />
       <Browser visible={select === Object.keys(items)[0]} />
+      <DownLoad visible={select === Object.keys(items)[1]} />
       <Setting visible={select === Object.keys(items)[2]} />
     </div>
   );
