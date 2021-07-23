@@ -25,9 +25,9 @@ export default function DownloadCell (props: {task: DownloadTask}) {
   const time = React.useCallback(() => {
     switch (task.status) {
       case DownloadStatus.Finished:
-        return `用时:${task.waitingTime}`
+        return `完成时间:${task.waitingTime}`
       case DownloadStatus.Downloading:
-        return `剩余:${task.waitingTime}`
+        return `剩余时间:${task.waitingTime}`
       default:
         return ''
     }

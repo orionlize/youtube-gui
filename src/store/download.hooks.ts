@@ -38,34 +38,6 @@ function useDownload () {
 
   // console.log(downloadQueue)
 
-  function _analyzeData (data: string, task: DownloadTask) {
-    const fileStart = data.indexOf('[download] Destination: ')
-    const downloadStart = data.indexOf('[download]')
-    const finish = data.search(/ in /)
-
-    if (fileStart !== -1) {
-      const fileEnd = data.search(/(\n|\r|(\r\n)|(\u0085)|(\u2028)|(\u2029))/)
-      task.fileName = data.substring(24, fileEnd)
-    } else if (downloadStart !== -1) {
-      if (finish !== -1) {
-        finishDownloadTask(task)
-      }
-
-      const percentageRegex = data.match(/\[download\] +([\s\S]*?) +of/)
-      const fileSizeRegex = data.match(/of +([\s\S]*?) +at/)
-      const speedRegex = data.match(/at +([\s\S]*?) +/)
-
-      if (percentageRegex) {
-        task.percentage = percentageRegex[1]
-      }
-      if (fileSizeRegex) {
-        task.fileSize = fileSizeRegex[1]
-      }
-      task.speed = speedRegex ? speedRegex[1] : '0KiB/s'
-      task.waitingTime = data.split(' ').pop()!
-    }
-  }
-
   function _readyToDownload () {
     if (waitingQueue.length > 0 && downloadQueue.length < maxDownloadTask) {
       setWaitingQueue(draft => {
@@ -104,10 +76,15 @@ function useDownload () {
     }
   }
 
-  function finishDownloadTask (task: DownloadTask) {
+  function finishDownloadTask (_: any, taskId: string, fileSize: string) {
+    const task = downloadMap.get(taskId)
     if (task !== undefined) {
       setDownloadQueue(draft => {
         task.status = DownloadStatus.Finished
+        task.fileName = task.fileName.substring(0, task.fileName.lastIndexOf('.'))
+        task.waitingTime = new Date().toUTCString()
+        task.percentage = '100%'
+        task.fileSize = fileSize
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
         downloadMap.delete(task.taskId)
         setFinishQueue(_draft => {
@@ -176,13 +153,17 @@ function useDownload () {
     addDownloadTask(task.taskId)
   }
 
-  const updateTask = (_: any, data: string, taskId: string, pid: number) => {
+  const updateTask = (_: any, data: any, taskId: string, pid: number) => {
     const task = downloadMap.get(taskId)!
     if (task !== undefined) {
       setDownloadQueue(draft => {
         if (task) {
           task.pid = pid
-          _analyzeData(data, task)
+          task.fileName = data.fileName
+          task.percentage = data.percentage
+          task.fileSize = data.fileSize
+          task.speed = data.speed
+          task.waitingTime = data.waitingTime
         }
 
         return draft.slice()
