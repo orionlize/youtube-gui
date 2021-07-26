@@ -11,6 +11,7 @@ class DownLoad extends React.Component<{visible: boolean, download: {
   downloadQueue: DownloadTask[]
   finishQueue: DownloadTask[]
   waitingQueue: DownloadTask[]
+  deletedQueue: DownloadTask[]
 }}> {
 
   callback(key: any) {
@@ -32,7 +33,9 @@ class DownLoad extends React.Component<{visible: boolean, download: {
         renderItem={(task) => <DownloadCell key={task.taskId} task={task} />} />
     </Tabs.TabPane>
     <Tabs.TabPane tab="已删除" key="deleted">
-      Content of Tab Pane 3
+      <List 
+        dataSource={download.deletedQueue} 
+        renderItem={(task) => <DownloadCell key={task.taskId} task={task} />} />
     </Tabs.TabPane>
   </Tabs>
   }

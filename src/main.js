@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
-const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, PAUSE } = require('./const/index')
-const { handleReadMessage, handleWriteMessage, readConfigureSync, handleDownload, handlePause } = require('./utils/index')
+const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, PAUSE, DELETE } = require('./const/index')
+const { handleReadMessage, handleWriteMessage, readConfigureSync, handleDownload, handlePause, handleDelete } = require('./utils/index')
 
 const config = readConfigureSync()
 
@@ -23,6 +23,7 @@ function createWindow () {
   ipcMain.on(LOCAL_WRITE, handleWriteMessage)
   ipcMain.on(DOWNLOAD, handleDownload)
   ipcMain.on(PAUSE, handlePause)
+  ipcMain.on(DELETE, handleDelete)
 
   mainWindow.loadURL('http://localhost:3000/')
   mainWindow.webContents.openDevTools()
@@ -33,6 +34,7 @@ function createWindow () {
     ipcMain.off(LOCAL_WRITE, handleWriteMessage)
     ipcMain.off(DOWNLOAD, handleDownload)
     ipcMain.off(PAUSE, handlePause)
+    ipcMain.off(DELETE, handleDelete)
   })
 }
 

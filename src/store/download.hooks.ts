@@ -1,8 +1,10 @@
-import { DOWNLOAD, PAUSE } from '@/const'
-import { getDownloadViedeoShell } from '@/utils/shell'
 import { createModel } from 'hox'
 import { useImmer } from 'use-immer'
+import { Modal, message } from 'antd'
+import { DELETE, DOWNLOAD, PAUSE } from '@/const'
+import { getDownloadViedeoShell } from '@/utils/shell'
 import useConfig from './config'
+import React from 'react'
 
 export enum DownloadStatus {
   Ready,
@@ -26,7 +28,9 @@ export class DownloadTask {
 
 const electron = window.require('electron')
 
-export const downloadMap = new Map<string, DownloadTask>()
+const downloadMap = new Map<string, DownloadTask>()
+const finishMap = new Map<string, DownloadTask>()
+const deletedMap = new Map<string, DownloadTask>()
 
 function useDownload () {
   const [ downloadQueue, setDownloadQueue ] = useImmer<DownloadTask[]>([])
@@ -36,31 +40,50 @@ function useDownload () {
 
   const { maxDownloadTask } = useConfig()
 
-  // console.log(downloadQueue)
-
-  function _readyToDownload () {
-    if (waitingQueue.length > 0 && downloadQueue.length < maxDownloadTask) {
+  React.useEffect(() => {
+    if (waitingQueue.length > 0 && downloadQueue.filter(_ => _.status === DownloadStatus.Downloading).length < maxDownloadTask) {
       setWaitingQueue(draft => {
+        const task = draft.splice(0, 1)[0]
         setDownloadQueue(_draft => {
-          const task = draft.pop()!
+          task.pid = 0
           task.status = DownloadStatus.Downloading
           _draft.push(task)
-          downloadMap.set(task.taskId, task)
+          electron.ipcRenderer.send(DOWNLOAD, {
+            shell: getDownloadViedeoShell(task.taskId),
+            taskId: task.taskId
+          })
         })
       })
     }
-  }
+  }, [downloadQueue, waitingQueue])
 
   function addDownloadTask (taskId: string) {
-    const task = downloadMap.get(taskId) || new DownloadTask()
+    const task = downloadMap.get(taskId) || finishMap.get(taskId) || deletedMap.get(taskId) || new DownloadTask()
+    if (task.status === DownloadStatus.Deleted) {
+      Modal.confirm({
+        content: '文件已删除,是否重新下载',
+        onOk: function() {
+          startDownloadTask(task)
+        }
+      })
+
+      return
+    } else if (task.status === DownloadStatus.Finished) {
+      message.info('文件已下载')
+
+      return
+    }else if (task.status !== DownloadStatus.Ready) {
+      return 
+    }
+
     task.taskId = taskId
 
     if (downloadQueue.filter(_ => _.status === DownloadStatus.Downloading).length < maxDownloadTask) {
       task.status = DownloadStatus.Downloading
       setDownloadQueue(draft => {
-        if (task.pid === undefined) {
+        task.pid = 0
+        if (!downloadMap.has(taskId)) {
           draft.push(task)
-          downloadMap.set(task.taskId, task)
         }
 
         electron.ipcRenderer.send(DOWNLOAD, {
@@ -74,9 +97,10 @@ function useDownload () {
         draft.push(task)
       })
     }
+    downloadMap.set(task.taskId, task)
   }
 
-  function finishDownloadTask (_: any, taskId: string, fileSize: string) {
+  function finishDownloadTask (_: any, taskId: string, fileSize: string, fileUrl: string) {
     const task = downloadMap.get(taskId)
     if (task !== undefined) {
       setDownloadQueue(draft => {
@@ -85,38 +109,51 @@ function useDownload () {
         task.waitingTime = new Date().toUTCString()
         task.percentage = '100%'
         task.fileSize = fileSize
+        task.fileUrl = fileUrl
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
         downloadMap.delete(task.taskId)
+        finishMap.set(task.taskId, task)
         setFinishQueue(_draft => {
           _draft.push(task)
         })
-        _readyToDownload()
 
         return draft
       }) 
     }
   }
 
-  function removeDownloadTask (task: DownloadTask) {
-    if (task.status === DownloadStatus.Ready || task.status === DownloadStatus.Pause) {
+  function deleteDownloadTask (task: DownloadTask) {
+    if (task.status === DownloadStatus.Ready) {
+      downloadMap.delete(task.taskId)
       setWaitingQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
+
+        return draft
       })
-    } else if (task.status === DownloadStatus.Downloading) {
+    }else if (task.status === DownloadStatus.Downloading || task.status === DownloadStatus.Pause) {
       setDownloadQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
         downloadMap.delete(task.taskId)
-        _readyToDownload()
-        // remove local file
+        if (task.status === DownloadStatus.Downloading) {
+          electron.ipcRenderer.send(PAUSE, task.pid)
+        }
+
+        electron.ipcRenderer.send(DELETE, task.fileUrl)
+
+        return draft
       })
     }else if (task.status === DownloadStatus.Finished) {
       setFinishQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
-        // remove local file
+        electron.ipcRenderer.send(DELETE, task.fileUrl)
+        finishMap.delete(task.taskId)
+
+        return draft
       })
     }
 
     task.status = DownloadStatus.Deleted
+    deletedMap.set(task.taskId, task)
     setDeletedQueue(draft => {
       draft.push(task)
     })
@@ -125,9 +162,6 @@ function useDownload () {
   function pauseDownloadTask (task: DownloadTask) {
     task.status = DownloadStatus.Pause
     setDownloadQueue(draft => {
-      task.status = DownloadStatus.Pause
-      _readyToDownload()
-
       electron.ipcRenderer.send(PAUSE, task.pid)
 
       return draft
@@ -136,6 +170,7 @@ function useDownload () {
 
   function startDownloadTask (task: DownloadTask) {
     if (task.status === DownloadStatus.Deleted) {
+      deletedMap.delete(task.taskId)
       setDeletedQueue(draft => {
         draft = draft.filter((_: DownloadTask) => _.taskId !== task.taskId)
 
@@ -153,17 +188,20 @@ function useDownload () {
     addDownloadTask(task.taskId)
   }
 
-  const updateTask = (_: any, data: any, taskId: string, pid: number) => {
+  const updateTask = (_: any, data: any, taskId: string) => {
     const task = downloadMap.get(taskId)!
     if (task !== undefined) {
       setDownloadQueue(draft => {
         if (task) {
-          task.pid = pid
+          task.pid = data.pid
           task.fileName = data.fileName
           task.percentage = data.percentage
           task.fileSize = data.fileSize
           task.speed = data.speed
           task.waitingTime = data.waitingTime
+          if (data.fileUrl) {
+            task.fileUrl = data.fileUrl
+          }
         }
 
         return draft.slice()
@@ -173,7 +211,7 @@ function useDownload () {
 
   return {
     downloadQueue, waitingQueue, finishQueue, deletedQueue, setDownloadQueue,
-    addDownloadTask, finishDownloadTask, pauseDownloadTask, removeDownloadTask, startDownloadTask, updateTask
+    addDownloadTask, finishDownloadTask, pauseDownloadTask, deleteDownloadTask, startDownloadTask, updateTask
   }
 }
 

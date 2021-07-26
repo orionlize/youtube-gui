@@ -4,7 +4,7 @@ import { createModel } from 'hox'
 function useConfig () {
   const [ proxyType, setProxyType ] = React.useState('socks://')
   const [ ip, setIp ] = React.useState('127.0.0.1:1080')
-  const [ maxDownloadTask, setMaxDownloadTask ] = React.useState(4)
+  const [ maxDownloadTask, setMaxDownloadTask ] = React.useState(1)
 
   return {
     proxyType, ip, maxDownloadTask,

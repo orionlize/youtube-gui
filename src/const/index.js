@@ -3,5 +3,6 @@ module.exports = {
   LOCAL_WRITE: 'LOCAL_WRITE',
   DOWNLOAD: 'DOWNLOAD',
   FINISH: 'FINISH',
-  PAUSE: 'PAUSE'
+  PAUSE: 'PAUSE',
+  DELETE: 'DELETE'
 }

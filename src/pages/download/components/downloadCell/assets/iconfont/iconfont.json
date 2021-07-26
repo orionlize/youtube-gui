@@ -6,6 +6,13 @@
   "description": "YouTube gui YouTube-dl ffmpeg",
   "glyphs": [
     {
+      "icon_id": "18367976",
+      "name": "删 除 (1)",
+      "font_class": "shanchu1",
+      "unicode": "e67d",
+      "unicode_decimal": 59005
+    },
+    {
       "icon_id": "20016130",
       "name": "下载",
       "font_class": "xiazai",

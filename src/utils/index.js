@@ -4,12 +4,15 @@ const path = require('path')
 const { kill } = require('process')
 const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, FINISH } = require('../const/index')
 
-function _exec (command, commandPath, stdout, finish) {
+const cwd = process.env.HOME || process.env.USERPROFILE 
+
+function _exec (command, commandPath, newFunc, stdout, finish) {
   let workerProcess 
   function runCommand(command, commandPath) {
-    workerProcess = exec(command, commandPath)
+    workerProcess = exec(command, {cwd: commandPath})
+    newFunc(workerProcess.pid)
     workerProcess.stdout.on('data', function (data) {
-      stdout(data, workerProcess.pid)
+      stdout(data)
     })
     workerProcess.stderr.on('data', function (data) {
       console.log('---------', data)
@@ -50,10 +53,13 @@ module.exports = {
   handleDownload: function (e, msg) {
     let timeout = null
 
-    const ref = {fileName: '获取中', percentage: '0.0%', fileSize: '获取中', waitingTime: '00:00'}
+    const ref = {fileName: '获取中', percentage: '0.0%', fileSize: '获取中', waitingTime: '00:00', fileUrl: ''}
     let fileName = ''
 
-    _exec(msg.shell, '~', function (data, pid) {
+    _exec(msg.shell, cwd, function (pid) {
+      ref.pid = pid
+      e.sender.send(DOWNLOAD, ref, msg.taskId)
+    }, function (data) {
       new Promise((resolve, reject) => {
         const fileStart = data.indexOf('[download] Destination: ')
         const downloadStart = data.indexOf('[download]')
@@ -62,6 +68,7 @@ module.exports = {
         if (fileStart !== -1) {
           const fileEnd = data.search(/(\n|\r|(\r\n)|(\u0085)|(\u2028)|(\u2029))/)
           ref.fileName = data.substring(24, fileEnd)
+          ref.fileUrl = path.resolve(cwd, ref.fileName + '.part')
           if (!fileName) {
             fileName = ref.fileName
           }
@@ -82,33 +89,40 @@ module.exports = {
           if (finish !== -1) {
             if (timeout) {
               clearTimeout(timeout)
-              e.sender.send(DOWNLOAD, ref, msg.taskId, pid)
+              e.sender.send(DOWNLOAD, ref, msg.taskId)
             }
           }
         }
   
         if (!timeout) {
           timeout = setTimeout(() => {
-            e.sender.send(DOWNLOAD, ref, msg.taskId, pid)
+            e.sender.send(DOWNLOAD, ref, msg.taskId)
+            timeout = null
           }, 1000)
-          timeout = null
         }
         resolve(true)
       })
     }, function () {
       fileName = fileName.split('.')
       fileName.splice(fileName.length - 2, 1)
-      fs.stat(path.resolve(__dirname, '..', '..', fileName.join('.')), function (err, stats) {
-        e.sender.send(FINISH, msg.taskId, (stats.size / 1000000).toFixed(2) + 'MIB')
+      ref.fileUrl = path.resolve(cwd, fileName.join('.'))
+      fs.stat(ref.fileUrl, function (err, stats) {
+        e.sender.send(FINISH, msg.taskId, (stats.size / 1000000).toFixed(2) + 'MiB', ref.fileUrl)
       })
     })
   },
   handlePause: function (e, msg) {
     try {
       kill(msg, 9)
-      kill(msg + 1, 9)
     } catch (error) {
       console.log(error)
     }
+  },
+  handleDelete: function (e, msg) {
+    fs.unlink(msg, function (err) {
+      if (err) {
+        console.log(err)
+      }
+    })
   }
 }
