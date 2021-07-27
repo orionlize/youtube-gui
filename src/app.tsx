@@ -1,17 +1,19 @@
 import React from 'react';
 
 import Menu from '@/components/menu'
-
 import useSelect, { items } from '@/store/menu'
 
 import Browser from './pages/browser'
 import Setting from './pages/setting'
 
 import styles from './app.module.sass'
-import DownLoad from './pages/download';
+import DownLoad from './pages/download';  
 
 function App() {
   const { select } = useSelect()
+
+  React.useEffect(() => {
+  }, [])
 
   return (
     <div className={styles['app']}>

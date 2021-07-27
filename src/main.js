@@ -1,11 +1,15 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
-const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, PAUSE, DELETE } = require('./const/index')
+const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, PAUSE, DELETE, READ_CONFIG } = require('./const/index')
 const { handleReadMessage, handleWriteMessage, readConfigureSync, handleDownload, handlePause, handleDelete } = require('./utils/index')
 
 const config = readConfigureSync()
+const readConfig = function(e) {
+  e.sender.send(READ_CONFIG, config)
+}
 
 app.commandLine.appendSwitch('proxy-server', `${config.proxy.type}${config.proxy.ip}`)
+
 
 let mainWindow
 function createWindow () {
@@ -24,10 +28,10 @@ function createWindow () {
   ipcMain.on(DOWNLOAD, handleDownload)
   ipcMain.on(PAUSE, handlePause)
   ipcMain.on(DELETE, handleDelete)
+  ipcMain.on(READ_CONFIG, readConfig)
 
   mainWindow.loadURL('http://localhost:3000/')
   mainWindow.webContents.openDevTools()
-
   mainWindow.on('closed', function() {
     mainWindow = null
     ipcMain.off(LOCAL_READ, handleReadMessage)
@@ -35,6 +39,7 @@ function createWindow () {
     ipcMain.off(DOWNLOAD, handleDownload)
     ipcMain.off(PAUSE, handlePause)
     ipcMain.off(DELETE, handleDelete)
+    ipcMain.off(READ_CONFIG, readConfig)
   })
 }
 

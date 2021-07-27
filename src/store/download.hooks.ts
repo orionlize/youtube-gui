@@ -2,7 +2,7 @@ import { createModel } from 'hox'
 import { useImmer } from 'use-immer'
 import { Modal, message } from 'antd'
 import { DELETE, DOWNLOAD, PAUSE } from '@/const'
-import { getDownloadViedeoShell } from '@/utils/shell'
+import { getDownloadVideoShell } from '@/utils/shell'
 import useConfig from './config'
 import React from 'react'
 
@@ -49,7 +49,7 @@ function useDownload () {
           task.status = DownloadStatus.Downloading
           _draft.push(task)
           electron.ipcRenderer.send(DOWNLOAD, {
-            shell: getDownloadViedeoShell(task.taskId),
+            shell: getDownloadVideoShell(task.taskId),
             taskId: task.taskId
           })
         })
@@ -87,7 +87,7 @@ function useDownload () {
         }
 
         electron.ipcRenderer.send(DOWNLOAD, {
-          shell: getDownloadViedeoShell(taskId),
+          shell: getDownloadVideoShell(taskId),
           taskId: taskId
         })
       })

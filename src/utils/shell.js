@@ -1,4 +1,6 @@
-export function getDownloadViedeoShell (url) {
-  console.log(`youtube-dl --proxy http://127.0.0.1:12333 -f 136+140 ${url.replace(/\?/g, "\\?")}`)
-  return `youtube-dl --proxy http://127.0.0.1:12333 -f 136+140 ${url.replace(/\?/g, "\\?")}`
+import configStore from '@/store/config'
+
+export function getDownloadVideoShell (url) {
+  console.log(`youtube-dl --proxy ${configStore.data.proxy()} -f 136+140 ${url.replace(/\?/g, "\\?")}`)
+  return `youtube-dl --proxy ${configStore.data.proxy()} -f 136+140 ${url.replace(/\?/g, "\\?")}`
 }

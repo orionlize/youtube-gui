@@ -4,5 +4,6 @@ module.exports = {
   DOWNLOAD: 'DOWNLOAD',
   FINISH: 'FINISH',
   PAUSE: 'PAUSE',
-  DELETE: 'DELETE'
+  DELETE: 'DELETE',
+  READ_CONFIG: 'READ_CONFIG'
 }

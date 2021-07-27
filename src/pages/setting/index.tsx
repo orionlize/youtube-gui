@@ -5,7 +5,6 @@ import styles from './index.module.sass'
 import { LOCAL_WRITE } from '@/const'
 
 const electron = window.require('electron')
-const { LOCAL_READ } = require('../../const/index')
 
 @layout
 export default class Setting extends Component<{visible: boolean}, {
@@ -15,7 +14,6 @@ export default class Setting extends Component<{visible: boolean}, {
 }> {
   constructor(props: any) {
     super(props)
-    this.updateSetting = this.updateSetting.bind(this)
     this.showReloadToast = this.showReloadToast.bind(this)
     this.onSelectChange = this.onSelectChange.bind(this)
     this.onChange = this.onChange.bind(this)
@@ -29,25 +27,23 @@ export default class Setting extends Component<{visible: boolean}, {
   }
 
   componentDidMount () {
-    electron.ipcRenderer.once(LOCAL_READ, this.updateSetting)
     electron.ipcRenderer.on(LOCAL_WRITE, this.showReloadToast)
-    electron.ipcRenderer.send(LOCAL_READ)
   }
   componentWillUnmount() {
     electron.ipcRenderer.on(LOCAL_WRITE, this.showReloadToast)
   }
 
-  updateSetting (e: any, msg: any) {
-    const keys = Object.keys(msg)
-    const dataSource: any[][] = []
-    for(const key of keys) {
-      dataSource.push([key, msg[key]])
-      this.setState(msg[key])
-    }
-    this.setState({
-      dataSource: dataSource
-    })
-  }
+  // updateSetting (e: any, msg: any) {
+  //   const keys = Object.keys(msg)
+  //   const dataSource: any[][] = []
+  //   for(const key of keys) {
+  //     dataSource.push([key, msg[key]])
+  //     this.setState(msg[key])
+  //   }
+  //   this.setState({
+  //     dataSource: dataSource
+  //   })
+  // }
 
   showReloadToast () {
     message.info('重启应用后生效')
