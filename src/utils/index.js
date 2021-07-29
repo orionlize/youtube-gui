@@ -4,8 +4,6 @@ const path = require('path')
 const { kill } = require('process')
 const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, FINISH } = require('../const/index')
 
-const cwd = process.env.HOME || process.env.USERPROFILE 
-
 function _exec (command, commandPath, newFunc, stdout, finish) {
   let workerProcess 
   function runCommand(command, commandPath) {
@@ -56,7 +54,7 @@ module.exports = {
     const ref = {fileName: '获取中', percentage: '0.0%', fileSize: '获取中', waitingTime: '00:00', fileUrl: ''}
     let fileName = ''
 
-    _exec(msg.shell, cwd, function (pid) {
+    _exec(msg.shell, msg.downloadPath, function (pid) {
       ref.pid = pid
       e.sender.send(DOWNLOAD, ref, msg.taskId)
     }, function (data) {
@@ -68,7 +66,7 @@ module.exports = {
         if (fileStart !== -1) {
           const fileEnd = data.search(/(\n|\r|(\r\n)|(\u0085)|(\u2028)|(\u2029))/)
           ref.fileName = data.substring(24, fileEnd)
-          ref.fileUrl = path.resolve(cwd, ref.fileName + '.part')
+          ref.fileUrl = path.resolve(msg.downloadPath, ref.fileName + '.part')
           if (!fileName) {
             fileName = ref.fileName
           }
@@ -105,7 +103,7 @@ module.exports = {
     }, function () {
       fileName = fileName.split('.')
       fileName.splice(fileName.length - 2, 1)
-      ref.fileUrl = path.resolve(cwd, fileName.join('.'))
+      ref.fileUrl = path.resolve(msg.downloadPath, fileName.join('.'))
       fs.stat(ref.fileUrl, function (err, stats) {
         e.sender.send(FINISH, msg.taskId, (stats.size / 1000000).toFixed(2) + 'MiB', ref.fileUrl)
       })

@@ -65,6 +65,7 @@ export default function DownloadCell (props: {task: DownloadTask}) {
 
   const clickDelete = React.useCallback(() => {
     deleteDownloadTask(task)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pauseDownloadTask, startDownloadTask, task])
 
   return <div className={styles['download']}>

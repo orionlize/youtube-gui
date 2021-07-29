@@ -48,14 +48,18 @@ function useDownload () {
           task.pid = 0
           task.status = DownloadStatus.Downloading
           _draft.push(task)
+
+          const taskDetail = getDownloadVideoShell(task.taskId)
           electron.ipcRenderer.send(DOWNLOAD, {
-            shell: getDownloadVideoShell(task.taskId),
+            shell: taskDetail.download,
+            downloadPath: taskDetail.downloadPath,
             taskId: task.taskId
           })
         })
       })
     }
-  }, [downloadQueue, waitingQueue])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [downloadQueue, maxDownloadTask])
 
   function addDownloadTask (taskId: string) {
     const task = downloadMap.get(taskId) || finishMap.get(taskId) || deletedMap.get(taskId) || new DownloadTask()
@@ -86,8 +90,10 @@ function useDownload () {
           draft.push(task)
         }
 
+        const taskDetail = getDownloadVideoShell(task.taskId)
         electron.ipcRenderer.send(DOWNLOAD, {
-          shell: getDownloadVideoShell(taskId),
+          shell: taskDetail.download,
+          downloadPath: taskDetail.downloadPath,
           taskId: taskId
         })
       })

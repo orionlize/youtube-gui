@@ -21,6 +21,7 @@ function createWindow () {
       webviewTag: true,
       nodeIntegration: true,
       contextIsolation: false,
+      enableRemoteModule: true
     }})
 
   ipcMain.on(LOCAL_READ, handleReadMessage)
