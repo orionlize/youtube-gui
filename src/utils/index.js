@@ -10,6 +10,7 @@ function _exec (command, commandPath, newFunc, stdout, finish) {
     workerProcess = exec(command, {cwd: commandPath})
     newFunc(workerProcess.pid)
     workerProcess.stdout.on('data', function (data) {
+      console.log(data)
       stdout(data)
     })
     workerProcess.stderr.on('data', function (data) {
@@ -26,10 +27,6 @@ function _exec (command, commandPath, newFunc, stdout, finish) {
 
 module.exports = {
   exec: _exec,
-	readConfigureSync: function () {
-		const config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config.json'), 'utf-8'))
-		return config
-	},
 	handleReadMessage: function (e, _) {
     fs.readFile(path.resolve(__dirname, '..', 'config.json'), 'utf-8', function(err, data) {
       if (!err) {

@@ -1,9 +1,9 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path')
 const { LOCAL_READ, LOCAL_WRITE, DOWNLOAD, PAUSE, DELETE, READ_CONFIG } = require('./const/index')
-const { handleReadMessage, handleWriteMessage, readConfigureSync, handleDownload, handlePause, handleDelete } = require('./utils/index')
+const { handleReadMessage, handleWriteMessage, handleDownload, handlePause, handleDelete } = require('./utils/index')
+const path = require('path')
 
-const config = readConfigureSync()
+const config = require('./config.json')
 const readConfig = function(e) {
   e.sender.send(READ_CONFIG, config)
 }
@@ -31,7 +31,8 @@ function createWindow () {
   ipcMain.on(DELETE, handleDelete)
   ipcMain.on(READ_CONFIG, readConfig)
 
-  mainWindow.loadURL('http://localhost:3000/')
+  mainWindow.loadURL(`file://${path.resolve(__dirname, '..', 'index.html')}`)
+  // mainWindow.loadURL('http://localhost:3000')
   mainWindow.webContents.openDevTools()
   mainWindow.on('closed', function() {
     mainWindow = null
@@ -57,7 +58,3 @@ app.on('activate', function () {
     createWindow()
   }
 })
-
-
-// let command = 'youtube-dl --proxy socks5://127.0.0.1:1080 -f 137 https://www.youtube.com/watch\?v=ekP7VLeXnqY'
-// let cmdStr = './'
